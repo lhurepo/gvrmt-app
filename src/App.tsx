@@ -1,10 +1,35 @@
 import { useState, useMemo, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Link, useParams, useNavigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './store';
 import { useTheme } from './ThemeContext';
 import { format, isAfter, isToday, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from 'date-fns';
 import { Home, Calendar, User, ClipboardList, LogOut, Settings, Users, Building2, Megaphone, Clock, Menu, X, Search, Filter, ChevronDown, ChevronUp, MapPin, Plus, Trash2, Sun, Moon, Check, ArrowLeft, AlertCircle } from 'lucide-react';
 import type { Session, AttendanceStatus } from './types';
+
+// ============ SAFE IMAGE COMPONENT ============
+// Handles image load failures gracefully - prevents broken UI when external images fail
+function SafeImage({ src, alt, className, style }: { src: string; alt: string; className?: string; style?: React.CSSProperties }) {
+  const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  
+  if (failed || !src) return null;
+  
+  return (
+    <>
+      {!loaded && (
+        <div className={className} style={{ ...style, background: 'linear-gradient(135deg, var(--color-purple-deep), var(--color-accent))' }} />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={className}
+        style={{ ...style, display: loaded ? 'block' : 'none' }}
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+      />
+    </>
+  );
+}
 
 // ============ LAYOUT ============
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -296,7 +321,7 @@ function Login() {
           <button onClick={handleLogin} disabled={!selectedEmail} className="w-full py-3 px-4 text-white font-semibold rounded-lg disabled:opacity-50" style={{ backgroundColor: selectedEmail ? 'var(--color-accent)' : 'var(--color-border)' }}>Sign In</button>
           <div className="mt-6 pt-4" style={{ borderTop: '1px solid var(--color-border)' }}><p className="text-xs text-center" style={{ color: 'var(--color-text-muted)' }}>Demo accounts • No password required</p></div>
         </div>
-        <div className="text-center mt-6"><a href="/kiosk/setup" className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Kiosk Setup →</a></div>
+        <div className="text-center mt-6"><Link to="/kiosk/setup" className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Kiosk Setup →</Link></div>
       </div>
     </div>
   );
@@ -320,7 +345,7 @@ function DancerDashboard() {
       </div>
       {nextClass && (
         <div className="rounded-2xl overflow-hidden text-white mb-8 relative" style={{ minHeight: '200px' }}>
-          {nextClass.image ? <><img src={nextClass.image} alt={nextClass.title} className="absolute inset-0 w-full h-full object-cover" /><div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" /></> : <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, var(--color-purple-deep), var(--color-accent))' }} />}
+          {nextClass.image ? <><SafeImage src={nextClass.image} alt={nextClass.title} className="absolute inset-0 w-full h-full object-cover" /><div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" /></> : <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, var(--color-purple-deep), var(--color-accent))' }} />}
           <div className="relative p-6"><p className="text-sm font-medium opacity-80">NEXT CLASS</p><h2 className="text-2xl font-bold mt-1">{nextClass.title}</h2><div className="flex items-center gap-4 mt-3 text-sm opacity-90"><span className="flex items-center gap-1"><Clock size={14} />{format(new Date(nextClass.startsAt), 'h:mm a')}</span><span className="flex items-center gap-1"><MapPin size={14} />{rooms.find(r => r.id === nextClass.roomId)?.name}</span></div><Link to={`/sessions/${nextClass.id}`} className="inline-block mt-4 px-4 py-2 bg-white/20 rounded-lg text-sm font-medium">View Details →</Link></div>
         </div>
       )}
@@ -354,7 +379,7 @@ function DancerSessions() {
             const isAlmostFull = spotsLeft <= 3;
             return (
               <Link key={session.id} to={`/sessions/${session.id}`} className="group rounded-xl overflow-hidden hover:shadow-lg transition-all" style={{ backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>
-                {session.image && <div className="relative h-48 overflow-hidden"><img src={session.image} alt={session.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /><div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" /><div className="absolute bottom-4 left-4"><span className="inline-block text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--color-purple-light)', color: 'var(--color-purple-deep)' }}>{session.danceStyle}</span></div>{isAlmostFull && <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: 'var(--color-error)', color: 'white' }}>Almost Full!</div>}</div>}
+                {session.image && <div className="relative h-48 overflow-hidden"><SafeImage src={session.image} alt={session.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /><div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" /><div className="absolute bottom-4 left-4"><span className="inline-block text-xs font-medium px-3 py-1 rounded-full" style={{ backgroundColor: 'var(--color-purple-light)', color: 'var(--color-purple-deep)' }}>{session.danceStyle}</span></div>{isAlmostFull && <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: 'var(--color-error)', color: 'white' }}>Almost Full!</div>}</div>}
                 <div className="p-5">
                   <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--color-text-primary)' }}>{session.title}</h3>
                   <div className="space-y-2 text-sm" style={{ color: 'var(--color-text-muted)' }}>
@@ -390,7 +415,7 @@ function DancerSessionDetail() {
     <div>
       <button onClick={() => navigate(-1)} className="text-sm mb-4 inline-block" style={{ color: 'var(--color-text-muted)' }}>← Back</button>
       <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>
-        {session.image && <div className="relative h-64 md:h-80"><img src={session.image} alt={session.title} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" /><div className="absolute bottom-6 left-6 right-6"><span className="inline-block text-xs font-medium px-3 py-1 rounded-full mb-3" style={{ backgroundColor: 'var(--color-purple-light)', color: 'var(--color-purple-deep)' }}>{session.danceStyle}</span><h1 className="text-3xl md:text-4xl font-bold text-white">{session.title}</h1></div></div>}
+        {session.image && <div className="relative h-64 md:h-80"><SafeImage src={session.image} alt={session.title} className="w-full h-full object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" /><div className="absolute bottom-6 left-6 right-6"><span className="inline-block text-xs font-medium px-3 py-1 rounded-full mb-3" style={{ backgroundColor: 'var(--color-purple-light)', color: 'var(--color-purple-deep)' }}>{session.danceStyle}</span><h1 className="text-3xl md:text-4xl font-bold text-white">{session.title}</h1></div></div>}
         <div className="p-8">
           {!session.image && <><span className="text-xs font-medium px-2 py-1 rounded" style={{ backgroundColor: 'var(--color-purple-light)', color: 'var(--color-purple-deep)' }}>{session.danceStyle}</span><h1 className="text-3xl font-bold mt-3" style={{ color: 'var(--color-text-primary)' }}>{session.title}</h1></>}
           <div className="grid grid-cols-2 gap-4 mt-6" style={{ color: 'var(--color-text-muted)' }}>
@@ -692,7 +717,7 @@ function InstructorCalendar() {
   const { currentUser, sessions } = useApp();
   if (!currentUser) return null;
   const mySessions = sessions.filter(s => s.instructorId === currentUser.id);
-  return (<div><h1 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-text-primary)' }}>My Calendar</h1><CalendarView sessions={mySessions} showInstructor={false} linkPrefix="/instructor/sessions" /></div>);
+  return (<div><h1 className="text-2xl font-bold mb-6" style={{ color: 'var(--color-text-primary)' }}>My Calendar</h1><CalendarView sessions={mySessions} linkPrefix="/instructor/sessions" /></div>);
 }
 
 function InstructorSettings() {
@@ -812,7 +837,7 @@ function AdminRooms() {
     <div>
       <div className="flex items-center justify-between mb-6"><h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Rooms</h1><button onClick={() => setShowAddForm(!showAddForm)} className="flex items-center gap-2 px-4 py-2 text-white rounded-lg font-medium" style={{ backgroundColor: 'var(--color-accent)' }}><Plus size={18} /> Add Room</button></div>
       {showAddForm && (<div className="rounded-xl p-6 mb-6" style={{ backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}><h3 className="font-semibold mb-4" style={{ color: 'var(--color-text-primary)' }}>New Room</h3><div className="grid grid-cols-2 gap-4"><input type="text" value={newRoom.name} onChange={e => setNewRoom(r => ({ ...r, name: e.target.value }))} placeholder="Room name" className="px-4 py-2 rounded-lg" style={{ backgroundColor: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }} /><input type="number" value={newRoom.capacity} onChange={e => setNewRoom(r => ({ ...r, capacity: parseInt(e.target.value) || 1 }))} placeholder="Capacity" className="px-4 py-2 rounded-lg" style={{ backgroundColor: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }} /></div><button onClick={() => { if (newRoom.name && newRoom.capacity > 0) { addRoom({ name: newRoom.name, capacity: newRoom.capacity, isActive: true }); setNewRoom({ name: '', capacity: 20 }); setShowAddForm(false); } }} className="mt-4 px-4 py-2 text-white rounded-lg text-sm" style={{ backgroundColor: 'var(--color-accent)' }}>Add Room</button></div>)}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">{rooms.map(room => { const roomSessions = sessions.filter(s => s.roomId === room.id && s.status === 'SCHEDULED').length; return (<div key={room.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>{room.image && <div className="h-32 overflow-hidden"><img src={room.image} alt={room.name} className="w-full h-full object-cover" /></div>}<div className="p-6"><div className="flex items-center gap-3 mb-4"><Building2 size={24} style={{ color: 'var(--color-accent)' }} /><div><h3 className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{room.name}</h3><p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Capacity: {room.capacity}</p></div></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{roomSessions} upcoming sessions</span><span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: room.isActive ? 'var(--color-success)' : 'var(--color-error)', color: 'white', opacity: 0.9 }}>{room.isActive ? 'Active' : 'Inactive'}</span></div><button onClick={() => updateRoom(room.id, { isActive: !room.isActive })} className="mt-3 text-xs" style={{ color: 'var(--color-text-muted)' }}>{room.isActive ? 'Deactivate' : 'Activate'}</button></div></div>); })}</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">{rooms.map(room => { const roomSessions = sessions.filter(s => s.roomId === room.id && s.status === 'SCHEDULED').length; return (<div key={room.id} className="rounded-xl overflow-hidden" style={{ backgroundColor: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>{room.image && <div className="h-32 overflow-hidden"><SafeImage src={room.image} alt={room.name} className="w-full h-full object-cover" /></div>}<div className="p-6"><div className="flex items-center gap-3 mb-4"><Building2 size={24} style={{ color: 'var(--color-accent)' }} /><div><h3 className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>{room.name}</h3><p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Capacity: {room.capacity}</p></div></div><div className="flex items-center justify-between"><span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{roomSessions} upcoming sessions</span><span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: room.isActive ? 'var(--color-success)' : 'var(--color-error)', color: 'white', opacity: 0.9 }}>{room.isActive ? 'Active' : 'Inactive'}</span></div><button onClick={() => updateRoom(room.id, { isActive: !room.isActive })} className="mt-3 text-xs" style={{ color: 'var(--color-text-muted)' }}>{room.isActive ? 'Deactivate' : 'Activate'}</button></div></div>); })}</div>
     </div>
   );
 }
@@ -1065,10 +1090,10 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AppProvider>
         <AppRoutes />
       </AppProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
