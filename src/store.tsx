@@ -54,6 +54,8 @@ const danceStyleImages: Record<string, string> = {
   'Popping': 'https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=800&h=600&fit=crop',
   'House': 'https://images.unsplash.com/photo-1545128485-c400e7702796?w=800&h=600&fit=crop',
   'Locking': 'https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=800&h=600&fit=crop',
+  'Contemporary': 'https://image.qwenlm.ai/generated-images/ffb07fbe-89e5-491d-9cb0-8d6b6bdd6988/_result.png',
+  'Afrobeats': 'https://image.qwenlm.ai/generated-images/c6dd8d12-f4aa-4c61-afdf-856de11281d1/_result.png',
 };
 
 function makeTime(hour: number, minute: number = 0, dayOffset: number = 0): string {
@@ -79,6 +81,9 @@ const seedSessions: Session[] = [
   { id: 's6', title: 'Hip Hop Fundamentals', danceStyle: 'Hip Hop', instructorId: 'u2', roomId: 'r1', startsAt: makeTime(18, 0, 1), endsAt: makeTime(19, 0, 1), capacity: 20, status: 'SCHEDULED', allowWalkIns: true, createdById: 'u1', image: danceStyleImages['Hip Hop'] },
   { id: 's7', title: 'Open Choreo', danceStyle: 'Hip Hop', instructorId: 'u3', roomId: 'r2', startsAt: makeTimePast(18, 0, 1), endsAt: makeTimePast(19, 0, 1), capacity: 15, status: 'COMPLETED', allowWalkIns: true, createdById: 'u1', image: danceStyleImages['Hip Hop'] },
   { id: 's8', title: 'Breaking Foundations', danceStyle: 'Breaking', instructorId: 'u2', roomId: 'r1', startsAt: makeTimePast(18, 0, 2), endsAt: makeTimePast(19, 30, 2), capacity: 18, status: 'COMPLETED', allowWalkIns: true, createdById: 'u1', image: danceStyleImages['Breaking'] },
+  { id: 's9', title: 'Contemporary Flow', danceStyle: 'Contemporary', instructorId: 'u2', roomId: 'r2', startsAt: makeTime(19, 0, 2), endsAt: makeTime(20, 30, 2), capacity: 15, status: 'SCHEDULED', allowWalkIns: true, createdById: 'u1', image: danceStyleImages['Contemporary'] },
+  { id: 's10', title: 'Afrobeats Vibes', danceStyle: 'Afrobeats', instructorId: 'u3', roomId: 'r1', startsAt: makeTime(17, 30, 3), endsAt: makeTime(18, 30, 3), capacity: 20, status: 'SCHEDULED', allowWalkIns: true, createdById: 'u1', image: danceStyleImages['Afrobeats'] },
+  { id: 's11', title: 'Contemporary Expressions', danceStyle: 'Contemporary', instructorId: 'u2', roomId: 'r3', startsAt: makeTime(16, 0, 4), endsAt: makeTime(17, 30, 4), capacity: 12, status: 'SCHEDULED', allowWalkIns: false, createdById: 'u1', image: danceStyleImages['Contemporary'] },
 ];
 
 const seedRegistrations: Registration[] = [
