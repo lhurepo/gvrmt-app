@@ -168,13 +168,11 @@ export function WeekCalendar({ onSessionClick, onCreateSession }: WeekCalendarPr
                 {getSessionsForDay(day).map(session => {
                   const position = getSessionPosition(session);
                   const levelColor = getLevelColor(session.level);
-                  const instructor = users.find(u => u.id === session.instructorId);
-                  const room = rooms.find(r => r.id === session.roomId);
 
                   return (
                     <div
                       key={session.id}
-                      className="absolute left-1 right-1 rounded-lg p-2 cursor-pointer hover:opacity-80 transition-opacity overflow-hidden border-l-4"
+                      className="absolute left-2 right-2 rounded-lg p-3 cursor-pointer hover:opacity-90 transition-all overflow-hidden border-l-4 shadow-sm hover:shadow-md"
                       style={{
                         top: position.top,
                         height: position.height,
@@ -184,16 +182,10 @@ export function WeekCalendar({ onSessionClick, onCreateSession }: WeekCalendarPr
                       }}
                       onClick={() => onSessionClick?.(session)}
                     >
-                      <div className="text-xs font-semibold truncate">{session.title}</div>
-                      <div className="text-xs truncate opacity-75">
+                      <div className="text-sm font-semibold truncate mb-1">{session.title}</div>
+                      <div className="text-xs opacity-75">
                         {format(new Date(session.startsAt), 'h:mm a')}
                       </div>
-                      {instructor && (
-                        <div className="text-xs truncate opacity-75">{instructor.name}</div>
-                      )}
-                      {room && (
-                        <div className="text-xs truncate opacity-75">{room.name}</div>
-                      )}
                     </div>
                   );
                 })}

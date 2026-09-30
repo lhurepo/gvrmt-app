@@ -113,7 +113,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
                   <p className="text-xs font-semibold uppercase tracking-wider mb-2 px-4" style={{ color: 'var(--color-text-muted)' }}>{section.section}</p>
                   <div className="space-y-1">
                     {section.items.map(item => {
-                      const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+                      const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path + '/'));
                       return (
                         <Link key={item.path} to={item.path} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors" style={{ backgroundColor: isActive ? 'var(--color-accent)' : 'transparent', color: isActive ? 'white' : 'var(--color-text-secondary)' }}>
                           <item.icon size={18} />{item.label}
@@ -127,7 +127,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           ) : (
             <div className="space-y-2">
               {navSections.flatMap(s => s.items).map(item => {
-                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+                const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path + '/'));
                 return (
                   <Link key={item.path} to={item.path} className="flex items-center justify-center p-3 rounded-lg transition-colors" style={{ backgroundColor: isActive ? 'var(--color-accent)' : 'transparent', color: isActive ? 'white' : 'var(--color-text-secondary)' }} title={item.label}>
                     <item.icon size={20} />
@@ -252,7 +252,7 @@ function useSessionFilters(sessions: Session[]) {
 }
 
 // ============ CALENDAR VIEW ============
-function CalendarView({ sessions: propSessions, linkPrefix = '/sessions' }: { sessions?: Session[]; linkPrefix?: string }) {
+export function CalendarView({ sessions: propSessions, linkPrefix = '/sessions' }: { sessions?: Session[]; linkPrefix?: string }) {
   const { sessions: allSessions, rooms, users } = useApp();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -285,7 +285,7 @@ function CalendarView({ sessions: propSessions, linkPrefix = '/sessions' }: { se
             return (
               <div key={day.toISOString()} onClick={() => setSelectedDate(day)} className="min-h-[100px] p-2 cursor-pointer transition-colors" style={{ borderBottom: '1px solid var(--color-border-light)', borderRight: '1px solid var(--color-border-light)', backgroundColor: isSelected ? 'var(--color-purple-light)' : 'transparent' }}>
                 <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-primary)' }}>{format(day, 'd')}</div>
-                <div className="space-y-1">{daySessions.slice(0, 2).map(session => <div key={session.id} className="text-xs px-2 py-1 rounded truncate" style={{ backgroundColor: 'var(--color-accent)', color: 'white' }}>{format(new Date(session.startsAt), 'h:mm')} {session.title}</div>)}{daySessions.length > 2 && <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>+{daySessions.length - 2} more</div>}</div>
+                <div className="space-y-1">{daySessions.slice(0, 2).map(session => { const levelColor = getLevelColor(session.level); return (<div key={session.id} className="text-xs px-2 py-1 rounded truncate border-l-2" style={{ backgroundColor: levelColor.bg, color: levelColor.text, borderLeftColor: levelColor.border }}>{format(new Date(session.startsAt), 'h:mm')} {session.title}</div>); })}{daySessions.length > 2 && <div className="text-xs" style={{ color: 'var(--color-text-muted)' }}>+{daySessions.length - 2} more</div>}</div>
               </div>
             );
           })}
