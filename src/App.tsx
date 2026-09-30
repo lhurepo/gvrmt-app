@@ -303,10 +303,10 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--color-purple-darkest)' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: theme === 'light' ? '#ffffff' : 'var(--color-purple-darkest)' }}>
       <div className="w-full max-w-md">
-        <div className="flex justify-end mb-4"><button onClick={toggleTheme} className="p-2 rounded-lg" style={{ backgroundColor: 'var(--color-purple-dark)', color: 'var(--color-text-muted)' }}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button></div>
-        <div className="text-center mb-8"><h1 className="text-4xl font-bold tracking-tight" style={{ color: 'var(--color-purple-light)' }}>GRVMNT</h1><p className="mt-2" style={{ color: 'var(--color-text-muted)' }}>Productions</p><p className="text-sm mt-4" style={{ color: 'var(--color-text-muted)' }}>Dance Scheduling & Attendance</p></div>
+        <div className="flex justify-end mb-4"><button onClick={toggleTheme} className="p-2 rounded-lg" style={{ backgroundColor: theme === 'light' ? 'var(--color-bg-tertiary)' : 'var(--color-purple-dark)', color: 'var(--color-text-muted)' }}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button></div>
+        <div className="text-center mb-8"><h1 className="text-4xl font-bold tracking-tight" style={{ color: theme === 'light' ? 'var(--color-purple-deep)' : 'var(--color-purple-light)' }}>GRVMNT</h1><p className="mt-2" style={{ color: 'var(--color-text-muted)' }}>Productions</p><p className="text-sm mt-4" style={{ color: 'var(--color-text-muted)' }}>Dance Scheduling & Attendance</p></div>
         <div className="rounded-2xl p-8 shadow-xl" style={{ backgroundColor: 'var(--color-bg-primary)' }}>
           <h2 className="text-xl font-semibold mb-6" style={{ color: 'var(--color-text-primary)' }}>Sign In</h2>
           <div className="space-y-3 mb-6">
