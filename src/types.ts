@@ -1,5 +1,6 @@
 export type UserRole = 'DANCER' | 'INSTRUCTOR' | 'ADMIN';
 export type SessionStatus = 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
+export type SessionLevel = 'beginner' | 'intermediate' | 'advanced';
 export type RegistrationStatus = 'REGISTERED' | 'CANCELLED';
 export type RegistrationSource = 'WEB' | 'KIOSK' | 'INSTRUCTOR' | 'ADMIN';
 export type AttendanceStatus = 'UNMARKED' | 'PRESENT' | 'LATE' | 'ABSENT' | 'EXCUSED';
@@ -54,6 +55,7 @@ export interface Session {
   allowWalkIns: boolean;
   createdById: string;
   image?: string;
+  level?: SessionLevel;
 }
 
 export interface Registration {
