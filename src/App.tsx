@@ -6,6 +6,8 @@ import { format, isAfter, isToday, startOfMonth, endOfMonth, eachDayOfInterval, 
 import { Home, Calendar, User, ClipboardList, LogOut, Settings, Users, Building2, Megaphone, Clock, Menu, X, Search, Filter, ChevronDown, ChevronUp, MapPin, Plus, Trash2, Sun, Moon, Check, ArrowLeft, AlertCircle } from 'lucide-react';
 import type { Session, AttendanceStatus } from './types';
 import { AdminSchedule } from './pages/AdminSchedule';
+import { AdminTeams } from './pages/AdminTeams';
+import { AdminTeamDetail } from './pages/AdminTeamDetail';
 import { getLevelColor } from './utils/levelColors';
 
 // ============ SAFE IMAGE COMPONENT ============
@@ -86,7 +88,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       ];
       case 'ADMIN': return [
         { section: 'Main', items: [{ path: '/admin', label: 'Dashboard', icon: Home }, { path: '/admin/schedule', label: 'Schedule', icon: Calendar }] },
-        { section: 'Management', items: [{ path: '/admin/sessions', label: 'Sessions', icon: Calendar }, { path: '/admin/dancers', label: 'Dancers', icon: Users }, { path: '/admin/instructors', label: 'Instructors', icon: Users }, { path: '/admin/rooms', label: 'Rooms', icon: Building2 }, { path: '/admin/announcements', label: 'Announcements', icon: Megaphone }] },
+        { section: 'Management', items: [{ path: '/admin/sessions', label: 'Sessions', icon: Calendar }, { path: '/admin/teams', label: 'Teams', icon: Users }, { path: '/admin/dancers', label: 'Dancers', icon: Users }, { path: '/admin/instructors', label: 'Instructors', icon: Users }, { path: '/admin/rooms', label: 'Rooms', icon: Building2 }, { path: '/admin/announcements', label: 'Announcements', icon: Megaphone }] },
         { section: 'Account', items: [{ path: '/admin/settings', label: 'Settings', icon: Settings }] },
       ];
       default: return [];
@@ -1118,6 +1120,8 @@ function AppRoutes() {
       <Route path="/admin/rooms" element={<ProtectedRoute roles={['ADMIN']}><AdminRooms /></ProtectedRoute>} />
       <Route path="/admin/announcements" element={<ProtectedRoute roles={['ADMIN']}><AdminAnnouncements /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute roles={['ADMIN']}><AdminSettings /></ProtectedRoute>} />
+      <Route path="/admin/teams" element={<ProtectedRoute roles={['ADMIN']}><AdminTeams /></ProtectedRoute>} />
+      <Route path="/admin/teams/:teamId" element={<ProtectedRoute roles={['ADMIN']}><AdminTeamDetail /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

@@ -3,7 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   User, DancerProfile, InstructorProfile, Room, Session,
   Registration, Attendance, InstructorAvailability, Announcement,
-  KioskSession, AttendanceStatus, AttendanceSource
+  KioskSession, AttendanceStatus, AttendanceSource,
+  Team, TeamMembership, TeamCoach, Guardian, GuardianDancerLink,
+  Fee, Invoice, Payment, PaymentAllocation
 } from './types';
 
 const today = new Date();
@@ -22,6 +24,8 @@ const seedUsers: User[] = [
   { id: 'u11', name: 'Taylor Singh', email: 'taylor@grvmnt.test', role: 'DANCER', isActive: true, avatar: '#6d3f9a' },
   { id: 'u12', name: 'Morgan Lee', email: 'morgan@grvmnt.test', role: 'DANCER', isActive: true, avatar: '#d8aafb' },
   { id: 'u13', name: 'Riley Johnson', email: 'riley@grvmnt.test', role: 'DANCER', isActive: true, avatar: '#824fb7' },
+  { id: 'u14', name: 'Sarah Martinez', email: 'sarah@grvmnt.test', role: 'PARENT', isActive: true, avatar: '#d8aafb' },
+  { id: 'u15', name: 'David Singh', email: 'david@grvmnt.test', role: 'PARENT', isActive: true, avatar: '#824fb7' },
 ];
 
 const seedDancerProfiles: DancerProfile[] = [
@@ -126,6 +130,67 @@ const seedAnnouncements: Announcement[] = [
   { id: 'a3', authorId: 'u2', title: 'Schedule Change', message: 'Thursday House class moved to Studio A starting next week.', audience: 'ALL', createdAt: makeTime(14, 0, 0) },
 ];
 
+// Teams seed data
+const seedTeams: Team[] = [
+  { id: 't1', name: 'Junior Hip Hop', description: 'Competitive hip hop team for ages 8-12', ageRangeMin: 8, ageRangeMax: 12, skillLevel: 'intermediate', status: 'ACTIVE', calendarColor: '#824fb7', createdById: 'u1', createdAt: makeTimePast(9, 0, 30) },
+  { id: 't2', name: 'Senior Breaking', description: 'Advanced breaking crew for competitions', ageRangeMin: 13, ageRangeMax: 18, skillLevel: 'advanced', status: 'ACTIVE', calendarColor: '#421c89', createdById: 'u1', createdAt: makeTimePast(9, 0, 30) },
+  { id: 't3', name: 'Contemporary Ensemble', description: 'Contemporary dance team focusing on artistic expression', ageRangeMin: 10, ageRangeMax: 16, skillLevel: 'intermediate', status: 'ACTIVE', calendarColor: '#6d3f9a', createdById: 'u1', createdAt: makeTimePast(9, 0, 30) },
+];
+
+const seedTeamMemberships: TeamMembership[] = [
+  { id: 'tm1', teamId: 't1', dancerId: 'u4', status: 'ACTIVE', startDate: makeTimePast(9, 0, 25), createdAt: makeTimePast(9, 0, 25) },
+  { id: 'tm2', teamId: 't1', dancerId: 'u5', status: 'ACTIVE', startDate: makeTimePast(9, 0, 25), createdAt: makeTimePast(9, 0, 25) },
+  { id: 'tm3', teamId: 't1', dancerId: 'u9', status: 'ACTIVE', startDate: makeTimePast(9, 0, 20), createdAt: makeTimePast(9, 0, 20) },
+  { id: 'tm4', teamId: 't2', dancerId: 'u6', status: 'ACTIVE', startDate: makeTimePast(9, 0, 25), createdAt: makeTimePast(9, 0, 25) },
+  { id: 'tm5', teamId: 't2', dancerId: 'u8', status: 'ACTIVE', startDate: makeTimePast(9, 0, 25), createdAt: makeTimePast(9, 0, 25) },
+  { id: 'tm6', teamId: 't3', dancerId: 'u7', status: 'ACTIVE', startDate: makeTimePast(9, 0, 25), createdAt: makeTimePast(9, 0, 25) },
+  { id: 'tm7', teamId: 't1', dancerId: 'u6', status: 'ACTIVE', startDate: makeTimePast(9, 0, 15), createdAt: makeTimePast(9, 0, 15) }, // u6 in multiple teams
+];
+
+const seedTeamCoaches: TeamCoach[] = [
+  { id: 'tc1', teamId: 't1', instructorId: 'u2', assignedAt: makeTimePast(9, 0, 30) },
+  { id: 'tc2', teamId: 't2', instructorId: 'u3', assignedAt: makeTimePast(9, 0, 30) },
+  { id: 'tc3', teamId: 't3', instructorId: 'u2', assignedAt: makeTimePast(9, 0, 30) },
+];
+
+// Guardian/Family seed data
+const seedGuardians: Guardian[] = [
+  { id: 'g1', userId: 'u14', relationship: 'Parent', createdAt: makeTimePast(9, 0, 30) },
+  { id: 'g2', userId: 'u15', relationship: 'Parent', createdAt: makeTimePast(9, 0, 30) },
+];
+
+const seedGuardianDancerLinks: GuardianDancerLink[] = [
+  { id: 'gdl1', guardianId: 'g1', dancerId: 'u9', verifiedAt: makeTimePast(9, 0, 30), verifiedById: 'u1', createdAt: makeTimePast(9, 0, 30) },
+  { id: 'gdl2', guardianId: 'g1', dancerId: 'u10', verifiedAt: makeTimePast(9, 0, 30), verifiedById: 'u1', createdAt: makeTimePast(9, 0, 30) },
+  { id: 'gdl3', guardianId: 'g2', dancerId: 'u11', verifiedAt: makeTimePast(9, 0, 30), verifiedById: 'u1', createdAt: makeTimePast(9, 0, 30) },
+];
+
+// Financial seed data
+const seedFees: Fee[] = [
+  { id: 'f1', name: 'Monthly Tuition - Junior Hip Hop', category: 'TUITION', amount: 15000, currency: 'CAD', billingPeriod: 'MONTHLY', teamId: 't1', createdById: 'u1', createdAt: makeTimePast(9, 0, 30) },
+  { id: 'f2', name: 'Competition Registration Fee', category: 'COMPETITION', amount: 7500, currency: 'CAD', teamId: 't1', createdById: 'u1', createdAt: makeTimePast(9, 0, 20) },
+  { id: 'f3', name: 'Costume Fee', category: 'COSTUME', amount: 12000, currency: 'CAD', teamId: 't2', createdById: 'u1', createdAt: makeTimePast(9, 0, 15) },
+];
+
+const seedInvoices: Invoice[] = [
+  { id: 'inv1', dancerId: 'u4', feeId: 'f1', amount: 15000, currency: 'CAD', status: 'PAID', dueDate: makeTime(9, 0, 5), teamId: 't1', payerId: 'g1', createdById: 'u1', createdAt: makeTimePast(9, 0, 10) },
+  { id: 'inv2', dancerId: 'u5', feeId: 'f1', amount: 15000, currency: 'CAD', status: 'PAID', dueDate: makeTime(9, 0, 5), teamId: 't1', payerId: 'g1', createdById: 'u1', createdAt: makeTimePast(9, 0, 10) },
+  { id: 'inv3', dancerId: 'u9', feeId: 'f1', amount: 15000, currency: 'CAD', status: 'OVERDUE', dueDate: makeTimePast(9, 0, 2), teamId: 't1', payerId: 'g1', createdById: 'u1', createdAt: makeTimePast(9, 0, 10) },
+  { id: 'inv4', dancerId: 'u6', feeId: 'f3', amount: 12000, currency: 'CAD', status: 'PARTIALLY_PAID', dueDate: makeTime(9, 0, 10), teamId: 't2', createdById: 'u1', createdAt: makeTimePast(9, 0, 15) },
+];
+
+const seedPayments: Payment[] = [
+  { id: 'p1', invoiceId: 'inv1', amount: 15000, currency: 'CAD', method: 'E_TRANSFER', status: 'COMPLETED', reference: 'ET-001', recordedById: 'u1', recordedAt: makeTimePast(9, 0, 8), verifiedAt: makeTimePast(9, 0, 7), verifiedById: 'u1' },
+  { id: 'p2', invoiceId: 'inv2', amount: 15000, currency: 'CAD', method: 'E_TRANSFER', status: 'COMPLETED', reference: 'ET-002', recordedById: 'u1', recordedAt: makeTimePast(9, 0, 8), verifiedAt: makeTimePast(9, 0, 7), verifiedById: 'u1' },
+  { id: 'p3', invoiceId: 'inv4', amount: 6000, currency: 'CAD', method: 'E_TRANSFER', status: 'COMPLETED', reference: 'ET-003', recordedById: 'u1', recordedAt: makeTimePast(9, 0, 12), verifiedAt: makeTimePast(9, 0, 11), verifiedById: 'u1' },
+];
+
+const seedPaymentAllocations: PaymentAllocation[] = [
+  { id: 'pa1', paymentId: 'p1', invoiceId: 'inv1', amount: 15000, createdAt: makeTimePast(9, 0, 7) },
+  { id: 'pa2', paymentId: 'p2', invoiceId: 'inv2', amount: 15000, createdAt: makeTimePast(9, 0, 7) },
+  { id: 'pa3', paymentId: 'p3', invoiceId: 'inv4', amount: 6000, createdAt: makeTimePast(9, 0, 11) },
+];
+
 interface AppState {
   currentUser: User | null;
   users: User[];
@@ -138,6 +203,16 @@ interface AppState {
   availability: InstructorAvailability[];
   announcements: Announcement[];
   kiosk: KioskSession;
+  // New entities
+  teams: Team[];
+  teamMemberships: TeamMembership[];
+  teamCoaches: TeamCoach[];
+  guardians: Guardian[];
+  guardianDancerLinks: GuardianDancerLink[];
+  fees: Fee[];
+  invoices: Invoice[];
+  payments: Payment[];
+  paymentAllocations: PaymentAllocation[];
 }
 
 interface AppContextType extends AppState {
@@ -170,6 +245,30 @@ interface AppContextType extends AppState {
   getRoomById: (id: string) => Room | undefined;
   getDancerProfile: (userId: string) => DancerProfile | undefined;
   getInstructorProfile: (userId: string) => InstructorProfile | undefined;
+  // Team functions
+  createTeam: (team: Omit<Team, 'id' | 'createdAt'>) => { success: boolean; message: string };
+  updateTeam: (id: string, updates: Partial<Team>) => void;
+  archiveTeam: (id: string) => void;
+  addTeamMember: (teamId: string, dancerId: string) => { success: boolean; message: string };
+  removeTeamMember: (membershipId: string) => void;
+  assignCoach: (teamId: string, instructorId: string) => void;
+  removeCoach: (coachId: string) => void;
+  getTeamMembers: (teamId: string) => TeamMembership[];
+  getTeamCoaches: (teamId: string) => TeamCoach[];
+  getDancerTeams: (dancerId: string) => Team[];
+  // Guardian/Family functions
+  linkGuardianToDancer: (guardianId: string, dancerId: string) => void;
+  unlinkGuardianFromDancer: (linkId: string) => void;
+  getGuardianChildren: (guardianId: string) => User[];
+  getDancerGuardians: (dancerId: string) => Guardian[];
+  // Financial functions
+  createFee: (fee: Omit<Fee, 'id' | 'createdAt'>) => void;
+  createInvoice: (invoice: Omit<Invoice, 'id' | 'createdAt'>) => void;
+  recordPayment: (payment: Omit<Payment, 'id' | 'recordedAt'>) => { success: boolean; message: string };
+  getDancerInvoices: (dancerId: string) => Invoice[];
+  getDancerBalance: (dancerId: string) => number;
+  getTeamInvoices: (teamId: string) => Invoice[];
+  getInvoicePayments: (invoiceId: string) => Payment[];
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -187,6 +286,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     availability: seedAvailability,
     announcements: seedAnnouncements,
     kiosk: { isActive: false },
+    teams: seedTeams,
+    teamMemberships: seedTeamMemberships,
+    teamCoaches: seedTeamCoaches,
+    guardians: seedGuardians,
+    guardianDancerLinks: seedGuardianDancerLinks,
+    fees: seedFees,
+    invoices: seedInvoices,
+    payments: seedPayments,
+    paymentAllocations: seedPaymentAllocations,
   });
 
   const login = (email: string): boolean => {
@@ -362,6 +470,166 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const getDancerProfile = (userId: string) => state.dancerProfiles.find(d => d.userId === userId);
   const getInstructorProfile = (userId: string) => state.instructorProfiles.find(i => i.userId === userId);
 
+  // Team functions
+  const createTeam = (team: Omit<Team, 'id' | 'createdAt'>) => {
+    if (!team.name || !team.createdById) return { success: false, message: 'Missing required fields.' };
+    const newTeam: Team = { ...team, id: uuidv4(), createdAt: new Date().toISOString() };
+    setState(s => ({ ...s, teams: [...s.teams, newTeam] }));
+    return { success: true, message: 'Team created!' };
+  };
+
+  const updateTeam = (id: string, updates: Partial<Team>) => {
+    if (!id) return;
+    setState(s => ({ ...s, teams: s.teams.map(t => t.id === id ? { ...t, ...updates } : t) }));
+  };
+
+  const archiveTeam = (id: string) => {
+    if (!id) return;
+    setState(s => ({ ...s, teams: s.teams.map(t => t.id === id ? { ...t, status: 'ARCHIVED' as const } : t) }));
+  };
+
+  const addTeamMember = (teamId: string, dancerId: string) => {
+    if (!teamId || !dancerId) return { success: false, message: 'Invalid parameters.' };
+    const existing = state.teamMemberships.find(m => m.teamId === teamId && m.dancerId === dancerId && m.status === 'ACTIVE');
+    if (existing) return { success: false, message: 'Dancer is already a member.' };
+    const newMembership: TeamMembership = {
+      id: uuidv4(), teamId, dancerId, status: 'ACTIVE',
+      startDate: new Date().toISOString(), createdAt: new Date().toISOString()
+    };
+    setState(s => ({ ...s, teamMemberships: [...s.teamMemberships, newMembership] }));
+    return { success: true, message: 'Member added!' };
+  };
+
+  const removeTeamMember = (membershipId: string) => {
+    if (!membershipId) return;
+    setState(s => ({
+      ...s,
+      teamMemberships: s.teamMemberships.map(m =>
+        m.id === membershipId ? { ...m, status: 'WITHDRAWN' as const, endDate: new Date().toISOString() } : m
+      )
+    }));
+  };
+
+  const assignCoach = (teamId: string, instructorId: string) => {
+    if (!teamId || !instructorId) return;
+    const existing = state.teamCoaches.find(c => c.teamId === teamId && c.instructorId === instructorId);
+    if (existing) return;
+    const newCoach: TeamCoach = { id: uuidv4(), teamId, instructorId, assignedAt: new Date().toISOString() };
+    setState(s => ({ ...s, teamCoaches: [...s.teamCoaches, newCoach] }));
+  };
+
+  const removeCoach = (coachId: string) => {
+    if (!coachId) return;
+    setState(s => ({ ...s, teamCoaches: s.teamCoaches.filter(c => c.id !== coachId) }));
+  };
+
+  const getTeamMembers = (teamId: string) => state.teamMemberships.filter(m => m.teamId === teamId && m.status === 'ACTIVE');
+  const getTeamCoaches = (teamId: string) => state.teamCoaches.filter(c => c.teamId === teamId);
+  const getDancerTeams = (dancerId: string) => {
+    const memberships = state.teamMemberships.filter(m => m.dancerId === dancerId && m.status === 'ACTIVE');
+    return memberships.map(m => state.teams.find(t => t.id === m.teamId)).filter((t): t is Team => !!t);
+  };
+
+  // Guardian/Family functions
+  const linkGuardianToDancer = (guardianId: string, dancerId: string) => {
+    if (!guardianId || !dancerId) return;
+    const existing = state.guardianDancerLinks.find(l => l.guardianId === guardianId && l.dancerId === dancerId);
+    if (existing) return;
+    const newLink: GuardianDancerLink = {
+      id: uuidv4(), guardianId, dancerId,
+      verifiedAt: new Date().toISOString(), verifiedById: state.currentUser?.id,
+      createdAt: new Date().toISOString()
+    };
+    setState(s => ({ ...s, guardianDancerLinks: [...s.guardianDancerLinks, newLink] }));
+  };
+
+  const unlinkGuardianFromDancer = (linkId: string) => {
+    if (!linkId) return;
+    setState(s => ({ ...s, guardianDancerLinks: s.guardianDancerLinks.filter(l => l.id !== linkId) }));
+  };
+
+  const getGuardianChildren = (guardianId: string) => {
+    const links = state.guardianDancerLinks.filter(l => l.guardianId === guardianId);
+    return links.map(l => state.users.find(u => u.id === l.dancerId)).filter((u): u is User => !!u);
+  };
+
+  const getDancerGuardians = (dancerId: string) => {
+    const links = state.guardianDancerLinks.filter(l => l.dancerId === dancerId);
+    return links.map(l => state.guardians.find(g => g.id === l.guardianId)).filter((g): g is Guardian => !!g);
+  };
+
+  // Financial functions
+  const createFee = (fee: Omit<Fee, 'id' | 'createdAt'>) => {
+    if (!fee.name || fee.amount <= 0 || !fee.createdById) return;
+    const newFee: Fee = { ...fee, id: uuidv4(), createdAt: new Date().toISOString() };
+    setState(s => ({ ...s, fees: [...s.fees, newFee] }));
+  };
+
+  const createInvoice = (invoice: Omit<Invoice, 'id' | 'createdAt'>) => {
+    if (!invoice.dancerId || invoice.amount <= 0 || !invoice.createdById) return;
+    const newInvoice: Invoice = { ...invoice, id: uuidv4(), createdAt: new Date().toISOString() };
+    setState(s => ({ ...s, invoices: [...s.invoices, newInvoice] }));
+  };
+
+  const recordPayment = (payment: Omit<Payment, 'id' | 'recordedAt'>) => {
+    if (!payment.invoiceId || payment.amount <= 0 || !payment.recordedById) {
+      return { success: false, message: 'Invalid payment data.' };
+    }
+    const invoice = state.invoices.find(i => i.id === payment.invoiceId);
+    if (!invoice) return { success: false, message: 'Invoice not found.' };
+    
+    // Calculate current balance
+    const currentPayments = state.payments.filter(p => p.invoiceId === payment.invoiceId && p.status === 'COMPLETED');
+    const paidAmount = currentPayments.reduce((sum, p) => sum + p.amount, 0);
+    const remainingBalance = invoice.amount - paidAmount;
+    
+    if (payment.amount > remainingBalance) {
+      return { success: false, message: 'Payment amount exceeds remaining balance.' };
+    }
+    
+    const newPayment: Payment = { ...payment, id: uuidv4(), recordedAt: new Date().toISOString() };
+    const newAllocation: PaymentAllocation = {
+      id: uuidv4(), paymentId: '', invoiceId: payment.invoiceId,
+      amount: payment.amount, createdAt: new Date().toISOString()
+    };
+    
+    setState(s => {
+      const paymentWithId = { ...newPayment, id: uuidv4() };
+      const allocationWithPaymentId = { ...newAllocation, paymentId: paymentWithId.id };
+      
+      // Update invoice status
+      const newPaidAmount = paidAmount + payment.amount;
+      let newStatus = invoice.status;
+      if (newPaidAmount >= invoice.amount) newStatus = 'PAID';
+      else if (newPaidAmount > 0) newStatus = 'PARTIALLY_PAID';
+      
+      return {
+        ...s,
+        payments: [...s.payments, paymentWithId],
+        paymentAllocations: [...s.paymentAllocations, allocationWithPaymentId],
+        invoices: s.invoices.map(i => i.id === payment.invoiceId ? { ...i, status: newStatus } : i)
+      };
+    });
+    
+    return { success: true, message: 'Payment recorded!' };
+  };
+
+  const getDancerInvoices = (dancerId: string) => state.invoices.filter(i => i.dancerId === dancerId);
+  
+  const getDancerBalance = (dancerId: string) => {
+    const invoices = state.invoices.filter(i => i.dancerId === dancerId && i.status !== 'VOID');
+    let totalBalance = 0;
+    invoices.forEach(invoice => {
+      const payments = state.payments.filter(p => p.invoiceId === invoice.id && p.status === 'COMPLETED');
+      const paid = payments.reduce((sum, p) => sum + p.amount, 0);
+      totalBalance += invoice.amount - paid;
+    });
+    return totalBalance;
+  };
+
+  const getTeamInvoices = (teamId: string) => state.invoices.filter(i => i.teamId === teamId);
+  const getInvoicePayments = (invoiceId: string) => state.payments.filter(p => p.invoiceId === invoiceId);
+
   const value: AppContextType = {
     ...state, login, logout, registerDancer, cancelRegistration, checkInDancer,
     markAttendance, createSession, updateSession, cancelSession, completeSession,
@@ -369,7 +637,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     createAnnouncement, deleteAnnouncement, activateKiosk, deactivateKiosk,
     getRegistrationCount, getAttendanceCount, getDancerAttendance,
     getSessionRegistrations, getSessionAttendance, getUserById, getRoomById,
-    getDancerProfile, getInstructorProfile
+    getDancerProfile, getInstructorProfile,
+    // Team functions
+    createTeam, updateTeam, archiveTeam, addTeamMember, removeTeamMember,
+    assignCoach, removeCoach, getTeamMembers, getTeamCoaches, getDancerTeams,
+    // Guardian/Family functions
+    linkGuardianToDancer, unlinkGuardianFromDancer, getGuardianChildren, getDancerGuardians,
+    // Financial functions
+    createFee, createInvoice, recordPayment, getDancerInvoices, getDancerBalance,
+    getTeamInvoices, getInvoicePayments
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
