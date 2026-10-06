@@ -5,7 +5,7 @@ import {
   Registration, Attendance, InstructorAvailability, Announcement,
   KioskSession, AttendanceStatus, AttendanceSource,
   Team, TeamMembership, TeamCoach, Guardian, GuardianDancerLink,
-  Fee, Invoice, Payment, PaymentAllocation
+  Fee, Invoice, Payment, PaymentAllocation, TeamMembershipRequest
 } from './types';
 
 const today = new Date();
@@ -191,6 +191,11 @@ const seedPaymentAllocations: PaymentAllocation[] = [
   { id: 'pa3', paymentId: 'p3', invoiceId: 'inv4', amount: 6000, createdAt: makeTimePast(9, 0, 11) },
 ];
 
+const seedTeamMembershipRequests: TeamMembershipRequest[] = [
+  { id: 'tmr1', teamId: 't1', dancerId: 'u11', requestedById: 'u11', status: 'PENDING', message: 'I would love to join the Junior Hip Hop team!', requestedAt: makeTimePast(9, 0, 2) },
+  { id: 'tmr2', teamId: 't2', dancerId: 'u12', requestedById: 'u14', status: 'PENDING', message: 'Requesting on behalf of my child Morgan Lee', requestedAt: makeTimePast(9, 0, 1) },
+];
+
 interface AppState {
   currentUser: User | null;
   users: User[];
@@ -207,6 +212,7 @@ interface AppState {
   teams: Team[];
   teamMemberships: TeamMembership[];
   teamCoaches: TeamCoach[];
+  teamMembershipRequests: TeamMembershipRequest[];
   guardians: Guardian[];
   guardianDancerLinks: GuardianDancerLink[];
   fees: Fee[];
@@ -223,7 +229,7 @@ interface AppContextType extends AppState {
   checkInDancer: (dancerId: string, sessionId: string) => { success: boolean; message: string; alreadyCheckedIn?: boolean };
   markAttendance: (sessionId: string, dancerId: string, status: AttendanceStatus, source: AttendanceSource, markedById: string) => void;
   createSession: (session: Omit<Session, 'id'>) => { success: boolean; message: string };
-  updateSession: (id: string, updates: Partial<Session>) => void;
+  updateSession: (id: string, updates: Partial<Session>) => { success: boolean; message: string };
   cancelSession: (id: string) => void;
   completeSession: (id: string) => void;
   addUser: (user: Omit<User, 'id'>) => void;
@@ -232,6 +238,7 @@ interface AppContextType extends AppState {
   addRoom: (room: Omit<Room, 'id'>) => void;
   updateRoom: (id: string, updates: Partial<Room>) => void;
   setAvailability: (instructorId: string, slots: Omit<InstructorAvailability, 'id' | 'instructorId'>[]) => void;
+  addAvailability: (instructorId: string, slot: Omit<InstructorAvailability, 'id' | 'instructorId'>) => void;
   createAnnouncement: (announcement: Omit<Announcement, 'id' | 'createdAt'>) => void;
   deleteAnnouncement: (id: string) => void;
   activateKiosk: () => void;
@@ -256,6 +263,10 @@ interface AppContextType extends AppState {
   getTeamMembers: (teamId: string) => TeamMembership[];
   getTeamCoaches: (teamId: string) => TeamCoach[];
   getDancerTeams: (dancerId: string) => Team[];
+  requestTeamMembership: (teamId: string, dancerId: string, requestedById: string, message?: string) => { success: boolean; message: string };
+  approveTeamMembershipRequest: (requestId: string, reviewedById: string) => { success: boolean; message: string };
+  rejectTeamMembershipRequest: (requestId: string, reviewedById: string, reason?: string) => { success: boolean; message: string };
+  getTeamMembershipRequests: (teamId?: string, status?: string) => TeamMembershipRequest[];
   // Guardian/Family functions
   linkGuardianToDancer: (guardianId: string, dancerId: string) => void;
   unlinkGuardianFromDancer: (linkId: string) => void;
@@ -289,6 +300,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     teams: seedTeams,
     teamMemberships: seedTeamMemberships,
     teamCoaches: seedTeamCoaches,
+    teamMembershipRequests: seedTeamMembershipRequests,
     guardians: seedGuardians,
     guardianDancerLinks: seedGuardianDancerLinks,
     fees: seedFees,
@@ -344,13 +356,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const existingAttendance = state.attendance.find(a => a.sessionId === sessionId && a.dancerId === dancerId && (a.status === 'PRESENT' || a.status === 'LATE'));
     if (existingAttendance) return { success: true, message: "You're already checked in.", alreadyCheckedIn: true };
     const registration = state.registrations.find(r => r.sessionId === sessionId && r.dancerId === dancerId && r.status === 'REGISTERED');
+    
+    // Check capacity and walk-in rules BEFORE attempting state update
+    if (!registration) {
+      if (!session.allowWalkIns) return { success: false, message: 'Walk-ins not allowed for this class.' };
+      const activeCount = state.registrations.filter(r => r.sessionId === sessionId && r.status === 'REGISTERED').length;
+      if (activeCount >= session.capacity) return { success: false, message: 'Class is full.' };
+    }
+    
+    // Perform state update
     setState(s => {
       let newRegistrations = [...s.registrations];
       let newAttendance = [...s.attendance];
       if (!registration) {
-        if (!session.allowWalkIns) return s;
-        const activeCount = s.registrations.filter(r => r.sessionId === sessionId && r.status === 'REGISTERED').length;
-        if (activeCount >= session.capacity) return s;
         const newReg: Registration = { id: uuidv4(), sessionId, dancerId, status: 'REGISTERED', source: 'KIOSK', registeredAt: new Date().toISOString() };
         newRegistrations = [...newRegistrations, newReg];
       }
@@ -391,8 +409,45 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const updateSession = (id: string, updates: Partial<Session>) => {
-    if (!id) return;
+    if (!id) return { success: false, message: 'Invalid session ID.' };
+    const session = state.sessions.find(s => s.id === id);
+    if (!session) return { success: false, message: 'Session not found.' };
+    
+    // Merge updates with existing session
+    const updatedSession = { ...session, ...updates };
+    const startsAtDate = new Date(updatedSession.startsAt);
+    const endsAtDate = new Date(updatedSession.endsAt);
+    
+    // Validate time range
+    if (startsAtDate >= endsAtDate) return { success: false, message: 'End time must be after start time.' };
+    
+    // Validate capacity
+    if (updatedSession.capacity <= 0) return { success: false, message: 'Capacity must be greater than 0.' };
+    const room = state.rooms.find(r => r.id === updatedSession.roomId);
+    if (room && updatedSession.capacity > room.capacity) return { success: false, message: `Capacity cannot exceed room capacity of ${room.capacity}.` };
+    
+    // Check room conflicts (excluding current session)
+    const roomConflict = state.sessions.find(s => 
+      s.id !== id && 
+      s.roomId === updatedSession.roomId && 
+      s.status !== 'CANCELLED' && 
+      new Date(s.startsAt) < endsAtDate && 
+      new Date(s.endsAt) > startsAtDate
+    );
+    if (roomConflict) return { success: false, message: 'Room is already booked for this time.' };
+    
+    // Check instructor conflicts (excluding current session)
+    const instructorConflict = state.sessions.find(s => 
+      s.id !== id && 
+      s.instructorId === updatedSession.instructorId && 
+      s.status !== 'CANCELLED' && 
+      new Date(s.startsAt) < endsAtDate && 
+      new Date(s.endsAt) > startsAtDate
+    );
+    if (instructorConflict) return { success: false, message: 'Instructor is already teaching at this time.' };
+    
     setState(s => ({ ...s, sessions: s.sessions.map(sess => sess.id === id ? { ...sess, ...updates } : sess) }));
+    return { success: true, message: 'Session updated!' };
   };
 
   const cancelSession = (id: string) => {
@@ -444,6 +499,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const newSlots = slots.map(slot => ({ ...slot, id: uuidv4(), instructorId }));
       return { ...s, availability: [...filtered, ...newSlots] };
     });
+  };
+
+  const addAvailability = (instructorId: string, slot: Omit<InstructorAvailability, 'id' | 'instructorId'>) => {
+    if (!instructorId) return;
+    const newSlot: InstructorAvailability = { ...slot, id: uuidv4(), instructorId };
+    setState(s => ({ ...s, availability: [...s.availability, newSlot] }));
   };
 
   const createAnnouncement = (announcement: Omit<Announcement, 'id' | 'createdAt'>) => {
@@ -528,6 +589,97 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const getDancerTeams = (dancerId: string) => {
     const memberships = state.teamMemberships.filter(m => m.dancerId === dancerId && m.status === 'ACTIVE');
     return memberships.map(m => state.teams.find(t => t.id === m.teamId)).filter((t): t is Team => !!t);
+  };
+
+  // Team membership request functions
+  const requestTeamMembership = (teamId: string, dancerId: string, requestedById: string, message?: string) => {
+    if (!teamId || !dancerId || !requestedById) return { success: false, message: 'Invalid parameters.' };
+    
+    // Check if already a member
+    const existingMembership = state.teamMemberships.find(m => m.teamId === teamId && m.dancerId === dancerId && m.status === 'ACTIVE');
+    if (existingMembership) return { success: false, message: 'Dancer is already a member of this team.' };
+    
+    // Check if there's already a pending request
+    const existingRequest = state.teamMembershipRequests.find(r => r.teamId === teamId && r.dancerId === dancerId && r.status === 'PENDING');
+    if (existingRequest) return { success: false, message: 'A pending request already exists.' };
+    
+    const newRequest: TeamMembershipRequest = {
+      id: uuidv4(),
+      teamId,
+      dancerId,
+      requestedById,
+      status: 'PENDING',
+      message,
+      requestedAt: new Date().toISOString()
+    };
+    
+    setState(s => ({ ...s, teamMembershipRequests: [...s.teamMembershipRequests, newRequest] }));
+    return { success: true, message: 'Request submitted!' };
+  };
+
+  const approveTeamMembershipRequest = (requestId: string, reviewedById: string) => {
+    if (!requestId || !reviewedById) return { success: false, message: 'Invalid parameters.' };
+    
+    const request = state.teamMembershipRequests.find(r => r.id === requestId);
+    if (!request) return { success: false, message: 'Request not found.' };
+    if (request.status !== 'PENDING') return { success: false, message: 'Request is not pending.' };
+    
+    // Check if already a member (might have been added manually)
+    const existingMembership = state.teamMemberships.find(m => m.teamId === request.teamId && m.dancerId === request.dancerId && m.status === 'ACTIVE');
+    if (existingMembership) {
+      // Update request status but don't create duplicate membership
+      setState(s => ({
+        ...s,
+        teamMembershipRequests: s.teamMembershipRequests.map(r =>
+          r.id === requestId ? { ...r, status: 'APPROVED' as const, reviewedAt: new Date().toISOString(), reviewedById } : r
+        )
+      }));
+      return { success: true, message: 'Request approved (dancer was already a member).' };
+    }
+    
+    // Create membership and update request
+    const newMembership: TeamMembership = {
+      id: uuidv4(),
+      teamId: request.teamId,
+      dancerId: request.dancerId,
+      status: 'ACTIVE',
+      startDate: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+    
+    setState(s => ({
+      ...s,
+      teamMemberships: [...s.teamMemberships, newMembership],
+      teamMembershipRequests: s.teamMembershipRequests.map(r =>
+        r.id === requestId ? { ...r, status: 'APPROVED' as const, reviewedAt: new Date().toISOString(), reviewedById } : r
+      )
+    }));
+    
+    return { success: true, message: 'Request approved and member added!' };
+  };
+
+  const rejectTeamMembershipRequest = (requestId: string, reviewedById: string, reason?: string) => {
+    if (!requestId || !reviewedById) return { success: false, message: 'Invalid parameters.' };
+    
+    const request = state.teamMembershipRequests.find(r => r.id === requestId);
+    if (!request) return { success: false, message: 'Request not found.' };
+    if (request.status !== 'PENDING') return { success: false, message: 'Request is not pending.' };
+    
+    setState(s => ({
+      ...s,
+      teamMembershipRequests: s.teamMembershipRequests.map(r =>
+        r.id === requestId ? { ...r, status: 'REJECTED' as const, reviewedAt: new Date().toISOString(), reviewedById, rejectionReason: reason } : r
+      )
+    }));
+    
+    return { success: true, message: 'Request rejected.' };
+  };
+
+  const getTeamMembershipRequests = (teamId?: string, status?: string) => {
+    let requests = state.teamMembershipRequests;
+    if (teamId) requests = requests.filter(r => r.teamId === teamId);
+    if (status) requests = requests.filter(r => r.status === status);
+    return requests;
   };
 
   // Guardian/Family functions
@@ -633,7 +785,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const value: AppContextType = {
     ...state, login, logout, registerDancer, cancelRegistration, checkInDancer,
     markAttendance, createSession, updateSession, cancelSession, completeSession,
-    addUser, updateUser, deactivateUser, addRoom, updateRoom, setAvailability,
+    addUser, updateUser, deactivateUser, addRoom, updateRoom, setAvailability, addAvailability,
     createAnnouncement, deleteAnnouncement, activateKiosk, deactivateKiosk,
     getRegistrationCount, getAttendanceCount, getDancerAttendance,
     getSessionRegistrations, getSessionAttendance, getUserById, getRoomById,
@@ -641,6 +793,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // Team functions
     createTeam, updateTeam, archiveTeam, addTeamMember, removeTeamMember,
     assignCoach, removeCoach, getTeamMembers, getTeamCoaches, getDancerTeams,
+    requestTeamMembership, approveTeamMembershipRequest, rejectTeamMembershipRequest, getTeamMembershipRequests,
     // Guardian/Family functions
     linkGuardianToDancer, unlinkGuardianFromDancer, getGuardianChildren, getDancerGuardians,
     // Financial functions
